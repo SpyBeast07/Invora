@@ -10,6 +10,8 @@ import Customers from './pages/Customers';
 import Orders from './pages/Orders';
 import { apiService } from './services/api';
 
+import { ToastProvider } from './components/ToastContext';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -69,18 +71,20 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/orders" element={<Orders />} />
-            {/* Fallback routing */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/orders" element={<Orders />} />
+              {/* Fallback routing */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
