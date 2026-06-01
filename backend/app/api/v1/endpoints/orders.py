@@ -107,3 +107,27 @@ async def update_order_status(
             detail=f"Order with ID {order_id} not found."
         )
     return await OrderService.update_status(db, order, update_in)
+
+
+@router.delete(
+    "/{order_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(deps.RoleChecker(["admin"]))],
+)
+async def delete_order(
+    order_id: int,
+    db: AsyncSession = Depends(deps.get_db),
+):
+    """
+    Delete a sales order.
+    Restores product inventory stock levels unless the order was cancelled.
+    Restricted to Admins only.
+    """
+    order = await OrderService.get_by_id(db, order_id)
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with ID {order_id} not found."
+        )
+    await OrderService.delete(db, order)
+    return None

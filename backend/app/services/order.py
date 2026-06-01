@@ -197,3 +197,19 @@ class OrderService:
         orders = list(result.scalars().all())
         
         return orders, total
+
+    @staticmethod
+    async def delete(db: AsyncSession, db_order: Order) -> None:
+        """
+        Deletes an order.
+        If the order status is NOT 'cancelled', restore the stock back to the products!
+        """
+        await db.refresh(db_order, ["items"])
+        if db_order.status.lower() != "cancelled":
+            for item in db_order.items:
+                product = await db.get(Product, item.product_id)
+                if product:
+                    product.quantity_in_stock += item.quantity
+                    db.add(product)
+        await db.delete(db_order)
+        await db.flush()
