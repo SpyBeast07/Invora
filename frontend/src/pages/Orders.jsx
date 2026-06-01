@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingCart, Plus, Trash2, X, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useToast } from '../components/ToastContext';
+import Card from '../components/Card';
 import Button from '../components/Button';
+import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Orders() {
@@ -15,7 +17,6 @@ export default function Orders() {
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
 
-  // Form state
   const [customerId, setCustomerId] = useState('');
   const [items, setItems] = useState([{ product_id: '', quantity: 1 }]);
   const [formErrors, setFormErrors] = useState({});
@@ -121,7 +122,7 @@ export default function Orders() {
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6">
       <ConfirmDialog
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -134,134 +135,132 @@ export default function Orders() {
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-            <ShoppingCart className="w-8 h-8 text-indigo-400" />
-            <span>Orders</span>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Orders
           </h1>
-          <p className="text-sm text-slate-400">Create and manage customer orders.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Create and manage customer orders.
+          </p>
         </div>
         <Button variant="primary" onClick={openCreateModal} icon={Plus}>
           Create Order
         </Button>
       </div>
 
-      {/* Orders List */}
       {isLoading ? (
         <div className="space-y-3 animate-pulse">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 bg-slate-900/20 border border-slate-800/40 rounded-xl" />
+            <div key={i} className="h-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
           ))}
         </div>
       ) : isError ? (
-        <div className="text-center p-8 border border-rose-500/15 bg-rose-500/5 text-rose-400 rounded-2xl">
-          Failed to load orders. Ensure the backend is running.
-        </div>
+        <Card className="p-8 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Failed to load orders. Ensure the backend is running.</p>
+        </Card>
       ) : orders.length === 0 ? (
-        <div className="text-center p-12 border border-slate-800/40 bg-slate-900/10 rounded-2xl text-slate-400">
-          No orders yet. Click "Create Order" to place one.
-        </div>
+        <Card className="p-8 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">No orders yet. Click "Create Order" to place one.</p>
+        </Card>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
-            <div
-              key={order.id}
-              className="rounded-2xl border border-slate-800/40 bg-slate-900/20 backdrop-blur-md overflow-hidden"
-            >
-              {/* Order Row */}
-              <div className="flex items-center justify-between p-4 hover:bg-slate-800/10 transition-colors">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-slate-500 font-medium">Order #{order.id}</span>
-                    <span className="font-semibold text-slate-200 truncate">
+            <Card key={order.id} className="overflow-hidden">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-6 flex-1 min-w-0">
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Order #{order.id}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                       {order.customer?.full_name || `Customer #${order.customer_id}`}
-                    </span>
+                    </p>
                   </div>
-                  <div className="hidden sm:flex flex-col ml-4">
-                    <span className="text-xs text-slate-500">Total</span>
-                    <span className="font-extrabold text-cyan-400">
+                  <div className="hidden sm:block">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 tabular-nums">
                       ${parseFloat(order.total_amount).toFixed(2)}
-                    </span>
+                    </p>
                   </div>
-                  <div className="hidden md:flex flex-col ml-4">
-                    <span className="text-xs text-slate-500">Items</span>
-                    <span className="text-sm text-slate-300">{order.items?.length ?? 0}</span>
+                  <div className="hidden md:block">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Items</p>
+                    <p className="text-sm text-slate-900 dark:text-slate-100">{order.items?.length ?? 0}</p>
                   </div>
-                  <div className="hidden lg:flex flex-col ml-4">
-                    <span className="text-xs text-slate-500">Date</span>
-                    <span className="text-xs text-slate-400">
+                  <div className="hidden lg:block">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Date</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       {new Date(order.created_at).toLocaleDateString()}
-                    </span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => toggleExpand(order.id)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors cursor-pointer"
-                    title="View details"
+                    className="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    title={expandedOrder === order.id ? 'Collapse' : 'Expand'}
                   >
                     {expandedOrder === order.id ? (
                       <ChevronUp className="w-4 h-4" />
                     ) : (
-                      <Eye className="w-4 h-4" />
+                      <ChevronDown className="w-4 h-4" />
                     )}
                   </button>
                   <button
                     onClick={() => handleDeleteClick(order)}
-                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/5 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Expanded Order Details */}
               {expandedOrder === order.id && (
-                <div className="border-t border-slate-800/40 px-4 pb-4 pt-3 space-y-3">
-                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <div className="border-t border-slate-100 dark:border-slate-700 px-4 pb-4 pt-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                     <div>
-                      <span className="text-slate-500 block">Customer</span>
-                      <span className="text-slate-200 font-semibold">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Customer</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">
                         {order.customer?.full_name}
-                      </span>
+                      </p>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Email</span>
-                      <span className="text-slate-300">{order.customer?.email}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
+                      <p className="text-slate-600 dark:text-slate-400">{order.customer?.email}</p>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Total Amount</span>
-                      <span className="text-cyan-400 font-extrabold">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Total</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">
                         ${parseFloat(order.total_amount).toFixed(2)}
-                      </span>
+                      </p>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Created</span>
-                      <span className="text-slate-300">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Created</p>
+                      <p className="text-slate-600 dark:text-slate-400">
                         {new Date(order.created_at).toLocaleString()}
-                      </span>
+                      </p>
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                      Order Items
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      Items
                     </p>
                     <div className="space-y-1.5">
                       {order.items?.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between bg-slate-900/40 rounded-lg px-3 py-2 text-sm"
+                          className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
                         >
-                          <span className="text-slate-300">
+                          <span className="text-slate-700 dark:text-slate-300">
                             Product #{item.product_id}
                           </span>
-                          <div className="flex items-center gap-4">
-                            <span className="text-slate-400">Qty: <span className="text-slate-200 font-semibold">{item.quantity}</span></span>
-                            <span className="text-slate-400">Unit: <span className="text-cyan-400 font-semibold">${parseFloat(item.unit_price).toFixed(2)}</span></span>
-                            <span className="text-slate-500 font-semibold">
-                              = ${(item.quantity * parseFloat(item.unit_price)).toFixed(2)}
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-slate-500 dark:text-slate-400">
+                              Qty: <span className="font-medium text-slate-700 dark:text-slate-300">{item.quantity}</span>
+                            </span>
+                            <span className="text-slate-500 dark:text-slate-400">
+                              Unit: <span className="font-medium text-slate-700 dark:text-slate-300">${parseFloat(item.unit_price).toFixed(2)}</span>
+                            </span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">
+                              ${(item.quantity * parseFloat(item.unit_price)).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -270,105 +269,98 @@ export default function Orders() {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Create Order Modal */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-800/60 bg-slate-900 p-6 space-y-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={closeCreateModal}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 rounded-lg cursor-pointer"
+      <Modal
+        isOpen={createOpen}
+        onClose={closeCreateModal}
+        title="Create Order"
+        maxWidth="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Customer <span className="text-red-500 ml-0.5">*</span>
+            </label>
+            <select
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              className={`block w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 ${formErrors.customer ? 'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20'}`}
             >
-              <X className="w-5 h-5" />
-            </button>
+              <option value="">Select a customer...</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name} ({c.email})
+                </option>
+              ))}
+            </select>
+            {formErrors.customer && <p className="text-xs text-red-600 dark:text-red-400">{formErrors.customer}</p>}
+          </div>
 
-            <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
-              <ShoppingCart className="w-5 h-5 text-indigo-400" />
-              Create New Order
-            </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Order Items <span className="text-red-500 ml-0.5">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={addItem}
+                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Item
+              </button>
+            </div>
+            {formErrors.items && <p className="text-xs text-red-600 dark:text-red-400">{formErrors.items}</p>}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Customer Select */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">Customer *</label>
+            {items.map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
                 <select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.customer ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
+                  value={item.product_id}
+                  onChange={(e) => updateItem(i, 'product_id', e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20"
                 >
-                  <option value="">Select a customer...</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.full_name} ({c.email})
+                  <option value="">Select product...</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} (SKU: {p.sku}) — ${parseFloat(p.price).toFixed(2)} — {p.quantity_in_stock} in stock
                     </option>
                   ))}
                 </select>
-                {formErrors.customer && <span className="text-[10px] text-rose-400">{formErrors.customer}</span>}
-              </div>
-
-              {/* Order Items */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-400">Order Items *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(i, 'quantity', e.target.value)}
+                  className="w-20 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20"
+                  placeholder="Qty"
+                />
+                {items.length > 1 && (
                   <button
                     type="button"
-                    onClick={addItem}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 cursor-pointer"
+                    onClick={() => removeItem(i)}
+                    className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Item
+                    <Trash2 className="w-4 h-4" />
                   </button>
-                </div>
-                {formErrors.items && <span className="text-[10px] text-rose-400 block">{formErrors.items}</span>}
-
-                {items.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <select
-                      value={item.product_id}
-                      onChange={(e) => updateItem(i, 'product_id', e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-cyan-500/60"
-                    >
-                      <option value="">Select product...</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} (SKU: {p.sku}) — ${parseFloat(p.price).toFixed(2)} — {p.quantity_in_stock} in stock
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number" min="1"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(i, 'quantity', e.target.value)}
-                      className="w-20 px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-cyan-500/60"
-                      placeholder="Qty"
-                    />
-                    {items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(i)}
-                        className="p-2 text-slate-500 hover:text-rose-400 cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                )}
               </div>
-
-              <div className="flex gap-3 pt-2 justify-end">
-                <Button variant="secondary" onClick={closeCreateModal}>Cancel</Button>
-                <Button type="submit" variant="primary" isLoading={createMutation.isPending}>
-                  Place Order
-                </Button>
-              </div>
-            </form>
+            ))}
           </div>
-        </div>
-      )}
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={closeCreateModal} type="button">
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={createMutation.isPending}>
+              Place Order
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Package,
   Plus,
   Trash2,
   Edit,
-  X,
-  AlertTriangle,
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useToast } from '../components/ToastContext';
+import Card from '../components/Card';
 import Button from '../components/Button';
+import Badge from '../components/Badge';
+import Modal from '../components/Modal';
+import Input from '../components/Input';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Products() {
@@ -22,7 +23,6 @@ export default function Products() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
-  // Form state
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [price, setPrice] = useState('10.00');
@@ -131,7 +131,7 @@ export default function Products() {
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6">
       <ConfirmDialog
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -144,173 +144,156 @@ export default function Products() {
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-            <Package className="w-8 h-8 text-cyan-400" />
-            <span>Products</span>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Products
           </h1>
-          <p className="text-sm text-slate-400">Manage your product catalog and inventory.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Manage your product catalog and inventory.
+          </p>
         </div>
         <Button variant="primary" onClick={openCreateModal} icon={Plus}>
           Add Product
         </Button>
       </div>
 
-      {/* Products Table */}
       {isLoading ? (
         <div className="space-y-3 animate-pulse">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 bg-slate-900/20 border border-slate-800/40 rounded-xl" />
+            <div key={i} className="h-12 bg-slate-200 dark:bg-slate-800 rounded-lg" />
           ))}
         </div>
       ) : isError ? (
-        <div className="text-center p-8 border border-rose-500/15 bg-rose-500/5 text-rose-400 rounded-2xl">
-          Failed to load products. Ensure the backend is running.
-        </div>
+        <Card className="p-8 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Failed to load products. Ensure the backend is running.</p>
+        </Card>
       ) : products.length === 0 ? (
-        <div className="text-center p-12 border border-slate-800/40 bg-slate-900/10 rounded-2xl text-slate-400">
-          No products yet. Click "Add Product" to create one.
-        </div>
+        <Card className="p-8 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">No products yet. Click "Add Product" to create one.</p>
+        </Card>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-800/40 bg-slate-900/20 backdrop-blur-md">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800/60 bg-slate-900/40 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                <th className="p-4">SKU</th>
-                <th className="p-4">Name</th>
-                <th className="p-4 text-right">Price</th>
-                <th className="p-4 text-center">Stock</th>
-                <th className="p-4 text-center">Status</th>
-                <th className="p-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/40 text-sm">
-              {products.map((prod) => {
-                const isLowStock = prod.quantity_in_stock <= 5;
-                return (
-                  <tr key={prod.id} className="hover:bg-slate-800/20 transition-colors">
-                    <td className="p-4 font-mono font-bold text-slate-400">{prod.sku}</td>
-                    <td className="p-4 font-semibold text-slate-200">{prod.name}</td>
-                    <td className="p-4 text-right font-extrabold text-cyan-400">
-                      ${parseFloat(prod.price).toFixed(2)}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className={`font-bold ${isLowStock ? 'text-amber-500 animate-pulse' : 'text-slate-200'}`}>
-                        {prod.quantity_in_stock}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center">
-                      {isLowStock ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                          <AlertTriangle className="w-3 h-3" />
-                          Low Stock
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-700">
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">SKU</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Price</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Stock</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {products.map((prod) => {
+                  const isLowStock = prod.quantity_in_stock <= 5;
+                  return (
+                    <tr key={prod.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-4 py-3 text-sm font-mono text-slate-500 dark:text-slate-400">{prod.sku}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{prod.name}</td>
+                      <td className="px-4 py-3 text-sm text-right text-slate-900 dark:text-slate-100 tabular-nums">
+                        ${parseFloat(prod.price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right tabular-nums">
+                        <span className={isLowStock ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-900 dark:text-slate-100'}>
+                          {prod.quantity_in_stock}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          Healthy
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => openEditModal(prod)}
-                          className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(prod)}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/5 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Create / Edit Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800/60 bg-slate-900 p-6 space-y-5 shadow-2xl relative">
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 rounded-lg cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Package className="w-5 h-5 text-cyan-400" />
-              {selectedProduct ? 'Edit Product' : 'Add New Product'}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-400">SKU *</label>
-                  <input
-                    type="text" required value={sku}
-                    onChange={(e) => setSku(e.target.value)}
-                    disabled={!!selectedProduct}
-                    placeholder="e.g., PROD-001"
-                    className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.sku ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
-                  />
-                  {formErrors.sku && <span className="text-[10px] text-rose-400">{formErrors.sku}</span>}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-400">Unit Price ($) *</label>
-                  <input
-                    type="number" step="0.01" min="0.01" required
-                    value={price} onChange={(e) => setPrice(e.target.value)}
-                    className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.price ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
-                  />
-                  {formErrors.price && <span className="text-[10px] text-rose-400">{formErrors.price}</span>}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">Product Name *</label>
-                <input
-                  type="text" required value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Mechanical Keyboard"
-                  className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.name ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
-                />
-                {formErrors.name && <span className="text-[10px] text-rose-400">{formErrors.name}</span>}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">Stock Quantity *</label>
-                <input
-                  type="number" min="0" required
-                  value={qty} onChange={(e) => setQty(e.target.value)}
-                  className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.qty ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
-                />
-                {formErrors.qty && <span className="text-[10px] text-rose-400">{formErrors.qty}</span>}
-              </div>
-
-              <div className="flex gap-3 pt-2 justify-end">
-                <Button variant="secondary" onClick={closeModal}>Cancel</Button>
-                <Button
-                  type="submit" variant="primary"
-                  isLoading={createMutation.isPending || updateMutation.isPending}
-                >
-                  {selectedProduct ? 'Save Changes' : 'Create Product'}
-                </Button>
-              </div>
-            </form>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isLowStock ? (
+                          <Badge variant="amber">Low Stock</Badge>
+                        ) : (
+                          <Badge variant="green">In Stock</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEditModal(prod)}
+                            className="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(prod)}
+                            className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
       )}
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={selectedProduct ? 'Edit Product' : 'Add Product'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="SKU"
+              required
+              value={sku}
+              onChange={(e) => setSku(e.target.value)}
+              placeholder="e.g., PROD-001"
+              error={formErrors.sku}
+              disabled={!!selectedProduct}
+            />
+            <Input
+              label="Unit Price ($)"
+              required
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              error={formErrors.price}
+            />
+          </div>
+
+          <Input
+            label="Product Name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Mechanical Keyboard"
+            error={formErrors.name}
+          />
+
+          <Input
+            label="Stock Quantity"
+            required
+            type="number"
+            min="0"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            error={formErrors.qty}
+          />
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={closeModal} type="button">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={createMutation.isPending || updateMutation.isPending}
+            >
+              {selectedProduct ? 'Save Changes' : 'Create Product'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

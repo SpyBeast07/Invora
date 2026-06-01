@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Trash2, X, Mail, Phone } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useToast } from '../components/ToastContext';
+import Card from '../components/Card';
 import Button from '../components/Button';
+import Modal from '../components/Modal';
+import Input from '../components/Input';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Customers() {
@@ -14,7 +17,6 @@ export default function Customers() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
 
-  // Form state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -91,7 +93,7 @@ export default function Customers() {
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6">
       <ConfirmDialog
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -104,146 +106,117 @@ export default function Customers() {
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-            <Users className="w-8 h-8 text-emerald-400" />
-            <span>Customers</span>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Customers
           </h1>
-          <p className="text-sm text-slate-400">Manage your customer directory.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Manage your customer directory.
+          </p>
         </div>
         <Button variant="primary" onClick={openCreateModal} icon={Plus}>
           Add Customer
         </Button>
       </div>
 
-      {/* Customers Table */}
       {isLoading ? (
         <div className="space-y-3 animate-pulse">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 bg-slate-900/20 border border-slate-800/40 rounded-xl" />
+            <div key={i} className="h-12 bg-slate-200 dark:bg-slate-800 rounded-lg" />
           ))}
         </div>
       ) : isError ? (
-        <div className="text-center p-8 border border-rose-500/15 bg-rose-500/5 text-rose-400 rounded-2xl">
-          Failed to load customers. Ensure the backend is running.
-        </div>
+        <Card className="p-8 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Failed to load customers. Ensure the backend is running.</p>
+        </Card>
       ) : customers.length === 0 ? (
-        <div className="text-center p-12 border border-slate-800/40 bg-slate-900/10 rounded-2xl text-slate-400">
-          No customers yet. Click "Add Customer" to create one.
-        </div>
+        <Card className="p-8 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">No customers yet. Click "Add Customer" to create one.</p>
+        </Card>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-800/40 bg-slate-900/20 backdrop-blur-md">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800/60 bg-slate-900/40 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                <th className="p-4">Name</th>
-                <th className="p-4">Email</th>
-                <th className="p-4">Phone</th>
-                <th className="p-4">Since</th>
-                <th className="p-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/40 text-sm">
-              {customers.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-800/20 transition-colors">
-                  <td className="p-4 font-semibold text-slate-200">{c.full_name}</td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>{c.email}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    {c.phone_number ? (
-                      <div className="flex items-center gap-1.5 text-slate-400">
-                        <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>{c.phone_number}</span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-600">—</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-slate-500 text-xs">
-                    {new Date(c.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex justify-center">
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-700">
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phone</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Since</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {customers.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{c.full_name}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{c.email}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                      {c.phone_number || <span className="text-slate-300 dark:text-slate-600">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      {new Date(c.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => handleDeleteClick(c)}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/5 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800/60 bg-slate-900 p-6 space-y-5 shadow-2xl relative">
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 rounded-lg cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Users className="w-5 h-5 text-emerald-400" />
-              Add New Customer
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">Full Name *</label>
-                <input
-                  type="text" required value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g., Jane Doe"
-                  className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.fullName ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
-                />
-                {formErrors.fullName && <span className="text-[10px] text-rose-400">{formErrors.fullName}</span>}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">Email Address *</label>
-                <input
-                  type="email" required value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g., jane@example.com"
-                  className={`w-full px-3 py-2 bg-slate-950/60 border rounded-lg text-sm text-slate-200 focus:outline-none transition-colors ${formErrors.email ? 'border-rose-500/60' : 'border-slate-800 focus:border-cyan-500/60'}`}
-                />
-                {formErrors.email && <span className="text-[10px] text-rose-400">{formErrors.email}</span>}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">Phone Number <span className="text-slate-600">(optional)</span></label>
-                <input
-                  type="text" value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g., +1 555 123 4567"
-                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-cyan-500/60"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2 justify-end">
-                <Button variant="secondary" onClick={closeModal}>Cancel</Button>
-                <Button type="submit" variant="primary" isLoading={createMutation.isPending}>
-                  Create Customer
-                </Button>
-              </div>
-            </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
       )}
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title="Add Customer"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Full Name"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="e.g., Jane Doe"
+            error={formErrors.fullName}
+          />
+
+          <Input
+            label="Email Address"
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="e.g., jane@example.com"
+            error={formErrors.email}
+          />
+
+          <Input
+            label="Phone Number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="e.g., +1 555 123 4567"
+            hint="Optional"
+          />
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={closeModal} type="button">
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={createMutation.isPending}>
+              Create Customer
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

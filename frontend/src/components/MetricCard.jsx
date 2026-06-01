@@ -1,35 +1,36 @@
-import React from 'react';
+const accentMap = {
+  blue: {
+    icon: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50',
+    border: 'border-l-blue-500 dark:border-l-blue-400',
+  },
+  green: {
+    icon: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/50',
+    border: 'border-l-green-500 dark:border-l-green-400',
+  },
+  indigo: {
+    icon: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50',
+    border: 'border-l-indigo-500 dark:border-l-indigo-400',
+  },
+  amber: {
+    icon: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50',
+    border: 'border-l-amber-500 dark:border-l-amber-400',
+  },
+};
 
-export default function MetricCard({ title, value, icon: Icon, colorClass, borderClass }) {
+export default function MetricCard({ title, value, icon: Icon, accent = 'blue' }) {
+  const style = accentMap[accent] || accentMap.blue;
+
   return (
-    <div className={`
-      relative p-6 rounded-2xl border bg-slate-900/40 backdrop-blur-md overflow-hidden hover:-translate-y-1 transition-all duration-300 group
-      ${borderClass || 'border-slate-800/40'}
-    `}>
-      {/* Decorative Glow effect on Hover */}
-      <div className={`
-        absolute -right-12 -bottom-12 w-32 h-32 rounded-full opacity-5 blur-2xl group-hover:opacity-10 transition-opacity duration-300
-        ${colorClass || 'bg-cyan-500'}
-      `} />
-
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <span className="text-sm font-medium text-slate-400 select-none">
-            {title}
-          </span>
-          <div className="text-3xl font-bold tracking-tight text-slate-100">
-            {value}
-          </div>
-        </div>
-
-        {/* Icon Widget */}
-        <div className={`
-          flex items-center justify-center w-12 h-12 rounded-xl border bg-slate-950/40
-          ${borderClass || 'border-slate-800/40'}
-        `}>
-          <Icon className={`w-5 h-5 ${colorClass || 'text-cyan-400'} group-hover:scale-110 transition-transform duration-300`} />
+    <div className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg border-l-2 ${style.border} p-5`}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-slate-500 dark:text-slate-400">{title}</p>
+        <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${style.icon}`}>
+          <Icon className="w-4 h-4" />
         </div>
       </div>
+      <p className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }
