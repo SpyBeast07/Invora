@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: invora_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: invora
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d invora"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: invora_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/invora
+      - SECRET_KEY=947fe3b320d43a6d713c2fbc9e7d6361a49fbf793c126d2e3079db6b36be600d
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: invora_frontend
+    restart: always
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:alpine
+    container_name: invora_caddy
+    restart: always
+    ports:
+      - "8087:8087"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+    name: invora_postgres_data

@@ -1,0 +1,24 @@
+:8087 {
+    # Enable Gzip compression
+    encode gzip
+
+    # Route API endpoints directly to the FastAPI container
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # Route Swagger UI documentation to the FastAPI container
+    handle /docs {
+        reverse_proxy backend:8000
+    }
+
+    # Route OpenAPI schema description to the FastAPI container
+    handle /openapi.json {
+        reverse_proxy backend:8000
+    }
+
+    # Serve the React Frontend web server for all other routes
+    handle {
+        reverse_proxy frontend:80
+    }
+}
