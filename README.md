@@ -1,8 +1,8 @@
 # Invora 📦💼
 
-Invora is a production-ready, highly optimized **Inventory & Order Management Platform** designed for store operators, warehouse managers, and administrators. 
+Invora is a production-ready, highly optimized **Inventory & Order Management Platform** designed for store operators, warehouse managers, and administrators.
 
-The backend is built using a modern, clean architecture in **FastAPI**, backed by **SQLAlchemy 2.0** and **PostgreSQL**, with automated migrations via **Alembic**, a local containerized database environment via **Docker**, and a comprehensive test suite via **Pytest**.
+The entire application is fully **Dockerized** — backend (FastAPI + PostgreSQL), frontend (React), and reverse proxy (Caddy) all run under a single `docker compose up` command. It is hosted at **[invora.kushagragupta.co.in](https://invora.kushagragupta.co.in)**.
 
 ---
 
@@ -40,7 +40,10 @@ The backend is built using a modern, clean architecture in **FastAPI**, backed b
 
 ```
 Invora/
-├── backend/                     # Python FastAPI Backend Services
+├── .env                          # Environment variables (all services)
+├── docker-compose.yml            # Orchestrates all 4 services
+├── Caddyfile                     # Reverse proxy (routes /api/* to backend)
+├── backend/                      # Python FastAPI Backend Services
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── v1/
@@ -75,6 +78,7 @@ Invora/
 │   │   │   ├── dashboard.py             # Analytics aggregation logic
 │   │   │   ├── order.py                 # ACID transaction checkout processor
 │   │   │   └── product.py               # Catalog management validations
+│   │   ├── seed.py                      # Database seed script
 │   │   └── main.py                      # Global entrypoint & CORS middlewares
 │   ├── alembic/                         # Alembic database migrations history
 │   ├── tests/                           # Complete test suite
@@ -82,63 +86,81 @@ Invora/
 │   │   └── test_backend.py              # End-to-end endpoint tests
 │   ├── .env.example                     # Environment template
 │   ├── .env                             # Local config secrets
-│   ├── .gitignore                       # Clean Git exclude patterns
 │   ├── alembic.ini                      # Alembic CLI config
-│   ├── docker-compose.yml               # Local PostgreSQL service
 │   ├── Dockerfile                       # Production multi-stage build
 │   ├── pytest.ini                       # Pytest-asyncio configuration
 │   └── requirements.txt                 # Dependencies package list
-└── frontend/                    # Vite Frontend Application
+├── frontend/                    # Vite + React Frontend Application
+│   ├── Dockerfile                       # Multi-stage build (Caddy server)
+│   └── Caddyfile                        # SPA routing config
 ```
 
 ---
 
-## 🐳 Database Docker Environment
+## 🚀 Live Demo
 
-Start a persistent PostgreSQL 16 database locally in the background using Docker Compose:
+The application is deployed and accessible at:
+
+> **https://invora.kushagragupta.co.in**
+
+---
+
+## 🐳 Docker Setup (Local Development)
+
+Run the entire application stack (PostgreSQL + Backend + Frontend + Caddy) with a single command:
 
 ```bash
-cd backend
 docker compose up -d
 ```
 
-*   Binds port `5432` to your localhost.
-*   Data is safely persisted inside the named volume `invora_postgres_data`.
-*   Includes built-in database `healthcheck`.
+This starts 4 services:
 
----
+| Service   | Container        | Role                                      |
+|-----------|------------------|-------------------------------------------|
+| `db`      | `invora_db`      | PostgreSQL 16 database                    |
+| `backend` | `invora_backend` | FastAPI / Uvicorn application server      |
+| `frontend`| `invora_frontend`| React static files served by Caddy        |
+| `caddy`   | `invora_caddy`   | Reverse proxy (routes `/api/*` to backend)|
 
-## 🏃 Local Setup & Run Instructions
+The app is available at **http://localhost:8087**.
 
-### 1. Configure the Virtual Environment
-Navigate to the `backend/` folder, create a virtual environment, activate it, and install dependencies:
+### Run Migrations
 
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Run Database Migrations
-Initialize your database schema by applying migrations using Alembic:
+After starting the stack, apply database migrations:
 
 ```bash
-alembic upgrade head
+docker compose exec backend alembic upgrade head
 ```
 
-*(To generate a new migration after modifying models in the future, simply run: `alembic revision --autogenerate -m "revision_description"`)*.
+*(To generate a new migration after modifying models: `docker compose exec backend alembic revision --autogenerate -m "description"`)*.
 
-### 3. Launch the Server
-Launch the FastAPI reload server:
+### Seed the Database (Optional)
+
+Populate with sample products, customers, and orders:
 
 ```bash
-uvicorn app.main:app --reload
+docker compose exec backend python -m app.seed
 ```
 
-*   **Interactive Swagger Documentation**: `http://localhost:8000/docs`
-*   **ReDoc Documentation**: `http://localhost:8000/redoc`
-*   **System Health Check Ping**: `http://localhost:8000/api/v1/health`
+*Rerunning is safe — it skips seeding if data already exists.*
+
+### View Logs
+
+```bash
+docker compose logs -f
+```
+
+### Stop the Stack
+
+```bash
+docker compose down
+```
+
+To also delete the persistent database volume:
+
+```bash
+docker compose down -v
+```
 
 ---
 
