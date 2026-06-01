@@ -1,33 +1,33 @@
 import asyncio
 import pytest
 from typing import AsyncGenerator
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core.database import get_db
 from app.models.base import Base
 
-# Isolated, in-memory SQLite async URL for fast test executions
+# In-memory SQLite for fast, isolated test execution
 SQLITE_TEST_URL = "sqlite+aiosqlite:///:memory:"
 
 test_engine = create_async_engine(
-    SQLITE_TEST_URL, 
-    connect_args={"check_same_thread": False}
+    SQLITE_TEST_URL,
+    connect_args={"check_same_thread": False},
 )
 
 TestSessionLocal = async_sessionmaker(
-    bind=test_engine, 
-    class_=AsyncSession, 
+    bind=test_engine,
+    class_=AsyncSession,
     expire_on_commit=False,
     autocommit=False,
-    autoflush=False
+    autoflush=False,
 )
 
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Create a session-scoped event loop to support async database cleanups."""
+    """Session-scoped event loop for async fixtures."""
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
@@ -39,10 +39,7 @@ def event_loop():
 
 @pytest.fixture(scope="function", autouse=True)
 async def init_db():
-    """
-    Initializes an empty database before every test function,
-    guaranteeing absolute test isolation.
-    """
+    """Create all tables before each test, drop them after. Guarantees isolation."""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -65,15 +62,15 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture(scope="function")
-def client(db_session: AsyncSession) -> TestClient:
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
-    Yields a TestClient linked to an overridden get_db dependency,
-    redirecting all API routes to the transactional SQLite test database.
+    Yields an httpx AsyncClient backed by the test SQLite database.
+    Overrides get_db to inject the test session.
     """
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
     app.dependency_overrides.clear()

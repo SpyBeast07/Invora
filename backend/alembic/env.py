@@ -7,6 +7,7 @@ from alembic import context
 sys.path.insert(0, ".")
 
 from app.models.base import Base
+from app.models import Customer, Product, Order, OrderItem  # noqa: F401 — needed for autogenerate
 from app.core.config import settings
 
 # 2. Setup logging config from alembic.ini
