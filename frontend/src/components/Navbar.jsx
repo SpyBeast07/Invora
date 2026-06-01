@@ -15,7 +15,7 @@ export default function Navbar({ onMenuToggle }) {
   const pageTitle = PAGE_TITLES[pathname] || 'Invora';
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+    <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuToggle}

@@ -190,7 +190,7 @@ export default function Products() {
                 {products.map((prod) => {
                   const isLowStock = prod.quantity_in_stock <= 5;
                   return (
-                    <tr key={prod.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={prod.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-4 py-3 text-sm font-mono text-slate-500 dark:text-slate-400">{prod.sku}</td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{prod.name}</td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900 dark:text-slate-100 tabular-nums">

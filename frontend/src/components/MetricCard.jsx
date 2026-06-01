@@ -21,7 +21,7 @@ export default function MetricCard({ title, value, icon: Icon, accent = 'blue' }
   const style = accentMap[accent] || accentMap.blue;
 
   return (
-    <div className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg border-l-2 ${style.border} p-5`}>
+    <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg border-l-2 ${style.border} p-5`}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">{title}</p>
         <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${style.icon}`}>

@@ -247,7 +247,7 @@ export default function Orders() {
                       {order.items?.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
+                          className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
                         >
                           <span className="text-slate-700 dark:text-slate-300">
                             Product #{item.product_id}

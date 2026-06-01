@@ -21,7 +21,7 @@ export default function Sidebar({ isOpen, onClose }) {
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-60 flex flex-col
-          bg-white dark:bg-slate-900
+          bg-slate-50 dark:bg-slate-900
           border-r border-slate-200 dark:border-slate-800
           transition-transform duration-200 ease-in-out
           lg:static lg:translate-x-0 lg:shrink-0
@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 `flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors
                 ${isActive
                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
                 }`
               }
             >

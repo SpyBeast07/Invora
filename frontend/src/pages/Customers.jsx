@@ -149,7 +149,7 @@ export default function Customers() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr key={c.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{c.full_name}</td>
                     <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{c.email}</td>
                     <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
