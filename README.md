@@ -124,6 +124,8 @@ This starts 4 services:
 
 The app is available at **http://localhost:8087**.
 
+The backend image is also available on Docker Hub: **[spybeast/invora](https://hub.docker.com/r/spybeast/invora)**.
+
 ### Run Migrations
 
 After starting the stack, apply database migrations:

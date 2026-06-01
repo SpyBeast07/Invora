@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from sqlalchemy import select
 
 from app.core.database import engine, SessionLocal
 from app.models import Base, Product, Customer, Order, OrderItem
@@ -35,7 +36,8 @@ async def seed() -> None:
         await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as session:
-        existing_products = await session.query(Product).count()
+        result = await session.execute(select(Product))
+        existing_products = len(result.scalars().all())
         if existing_products > 0:
             logger.info("Database already contains data. Skipping seed.")
             return
