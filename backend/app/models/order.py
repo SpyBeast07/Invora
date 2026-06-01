@@ -7,7 +7,8 @@ from app.models.base import Base
 
 class Order(Base):
     """
-    Order entity tracking aggregate information about transactions.
+    Order entity tracking aggregate information about sales transactions.
+    Linked to a specific Customer.
     """
     __tablename__ = "orders"
 
@@ -18,14 +19,9 @@ class Order(Base):
         nullable=False,
     )
     
-    customer_name: Mapped[str] = mapped_column(
-        String(255),
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"),
         nullable=False,
-    )
-    
-    customer_email: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
     )
     
     status: Mapped[str] = mapped_column(
@@ -40,12 +36,14 @@ class Order(Base):
         nullable=False,
     )
     
-    user_id: Mapped[int | None] = mapped_column(
+    user_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
 
     # Relationships
+    customer: Mapped["Customer"] = relationship("Customer", back_populates="orders")
+    
     items: Mapped[List["OrderItem"]] = relationship(
         "OrderItem",
         back_populates="order",

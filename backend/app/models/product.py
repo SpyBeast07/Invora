@@ -1,4 +1,4 @@
-from sqlalchemy import String, Numeric, Boolean
+from sqlalchemy import String, Numeric, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
 
@@ -40,6 +40,12 @@ class Product(Base):
         nullable=False,
     )
     
+    quantity_in_stock: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+    
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -47,12 +53,6 @@ class Product(Base):
     )
 
     # Relationships
-    inventory_records: Mapped[List["Inventory"]] = relationship(
-        "Inventory",
-        back_populates="product",
-        cascade="all, delete-orphan",
-    )
-    
     order_items: Mapped[List["OrderItem"]] = relationship(
         "OrderItem",
         back_populates="product",

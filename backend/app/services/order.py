@@ -10,9 +10,8 @@ from typing import List, Tuple, Optional
 
 from app.models.order import Order, OrderItem
 from app.models.product import Product
-from app.models.inventory import Inventory
+from app.models.customer import Customer
 from app.schemas.order import OrderCreate, OrderUpdate
-from app.services.inventory import InventoryService
 
 
 class OrderService:
@@ -29,17 +28,23 @@ class OrderService:
     ) -> Order:
         """
         Processes and creates a new customer order.
-        Validates inventory stock availability for each product, locks in unit price 
-        from the product catalog, decrements stock levels, and computes totals.
-        Uses clean ACID transactional flow.
+        Validates product availability directly against Product.quantity_in_stock,
+        locks catalog prices, decrements stock, and links Customer references.
         """
+        # Validate Customer existence
+        customer = await db.get(Customer, order_in.customer_id)
+        if not customer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Customer with ID {order_in.customer_id} does not exist.",
+            )
+
         order_number = cls._generate_order_number()
         total_amount = 0.00
         order_items: List[OrderItem] = []
 
-        # 1. Iterate and validate each item in the order request
+        # Iterate and validate each item in order request
         for item_in in order_in.items:
-            # Fetch catalog product
             product = await db.get(Product, item_in.product_id)
             if not product:
                 raise HTTPException(
@@ -52,26 +57,20 @@ class OrderService:
                     detail=f"Product '{product.name}' is currently inactive and cannot be ordered.",
                 )
 
-            # Fetch inventory levels
-            inventory_res = await db.execute(
-                select(Inventory).where(Inventory.product_id == item_in.product_id)
-            )
-            inventory = inventory_res.scalars().first()
-            if not inventory or inventory.quantity < item_in.quantity:
-                current_qty = inventory.quantity if inventory else 0
+            # Check quantity directly in product
+            if product.quantity_in_stock < item_in.quantity:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         f"Insufficient stock for product '{product.name}'. "
-                        f"Requested: {item_in.quantity}, Available: {current_qty}."
+                        f"Requested: {item_in.quantity}, Available: {product.quantity_in_stock}."
                     ),
                 )
 
-            # Deduct inventory count
-            inventory.quantity -= item_in.quantity
-            db.add(inventory)
+            # Deduct directly from Product stock
+            product.quantity_in_stock -= item_in.quantity
+            db.add(product)
 
-            # Build OrderItem model locking catalog price
             unit_price = float(product.price)
             item_total = unit_price * item_in.quantity
             total_amount += item_total
@@ -83,11 +82,10 @@ class OrderService:
             )
             order_items.append(order_item)
 
-        # 2. Construct parent Order model
+        # Construct Order model
         db_order = Order(
             order_number=order_number,
-            customer_name=order_in.customer_name,
-            customer_email=order_in.customer_email,
+            customer_id=order_in.customer_id,
             status="pending",
             total_amount=total_amount,
             user_id=user_id,
@@ -96,24 +94,27 @@ class OrderService:
         
         db.add(db_order)
         await db.flush()  # Obtain ID and finalize structures
+        
+        # Eager load relationships for return response
+        await db.refresh(db_order, ["customer", "items"])
         return db_order
 
     @staticmethod
     async def get_by_id(db: AsyncSession, order_id: int) -> Order | None:
-        """Retrieve order details by ID, eager loading line items."""
+        """Retrieve order details by ID, eager loading line items and customer info."""
         result = await db.execute(
             select(Order)
-            .options(selectinload(Order.items))
+            .options(selectinload(Order.items), selectinload(Order.customer))
             .where(Order.id == order_id)
         )
         return result.scalars().first()
 
     @staticmethod
     async def get_by_number(db: AsyncSession, order_number: str) -> Order | None:
-        """Retrieve order details by order_number code, eager loading line items."""
+        """Retrieve order details by order_number, eager loading line items and customer info."""
         result = await db.execute(
             select(Order)
-            .options(selectinload(Order.items))
+            .options(selectinload(Order.items), selectinload(Order.customer))
             .where(Order.order_number == order_number)
         )
         return result.scalars().first()
@@ -123,9 +124,8 @@ class OrderService:
         cls, db: AsyncSession, db_order: Order, update_in: OrderUpdate
     ) -> Order:
         """
-        Updates order fulfillment status.
-        If status transitions to 'cancelled', we automatically return reserved quantities
-        back to the corresponding warehouse inventories.
+        Updates order status.
+        If transitioned to 'cancelled', return stock directly to Product quantity.
         """
         old_status = db_order.status.lower()
         new_status = update_in.status.lower()
@@ -133,42 +133,33 @@ class OrderService:
         if old_status == new_status:
             return db_order
 
-        # Handle cancellation: Restore inventory stock levels
+        # Handle cancellation: Restore Product stock levels
         if new_status == "cancelled" and old_status != "cancelled":
-            # Eager load items if not already available
             await db.refresh(db_order, ["items"])
             for item in db_order.items:
-                res = await db.execute(
-                    select(Inventory).where(Inventory.product_id == item.product_id)
-                )
-                inventory = res.scalars().first()
-                if inventory:
-                    inventory.quantity += item.quantity
-                    db.add(inventory)
+                product = await db.get(Product, item.product_id)
+                if product:
+                    product.quantity_in_stock += item.quantity
+                    db.add(product)
 
-        # Handle un-cancelling (if an admin moves a cancelled order back to active)
+        # Handle un-cancelling
         elif old_status == "cancelled" and new_status != "cancelled":
             await db.refresh(db_order, ["items"])
             for item in db_order.items:
-                res = await db.execute(
-                    select(Inventory).where(Inventory.product_id == item.product_id)
-                )
-                inventory = res.scalars().first()
-                if not inventory or inventory.quantity < item.quantity:
-                    product_name_res = await db.execute(
-                        select(Product.name).where(Product.id == item.product_id)
-                    )
-                    prod_name = product_name_res.scalar() or f"ID {item.product_id}"
+                product = await db.get(Product, item.product_id)
+                if not product or product.quantity_in_stock < item.quantity:
+                    prod_name = product.name if product else f"ID {item.product_id}"
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Cannot reactivate order. Insufficient stock to reserve product '{prod_name}'.",
                     )
-                inventory.quantity -= item.quantity
-                db.add(inventory)
+                product.quantity_in_stock -= item.quantity
+                db.add(product)
 
         db_order.status = new_status
         db.add(db_order)
         await db.flush()
+        await db.refresh(db_order, ["customer", "items"])
         return db_order
 
     @staticmethod
@@ -181,10 +172,10 @@ class OrderService:
         search: Optional[str] = None,
     ) -> Tuple[List[Order], int]:
         """
-        Retrieve order transactions matching pagination and filters.
-        Returns a tuple of (list of orders, total matching count).
+        Retrieve order transactions matching pagination, status, and search filters.
+        Joins the Customer table to allow text searches on customer names.
         """
-        query = select(Order).options(selectinload(Order.items))
+        query = select(Order).join(Customer).options(selectinload(Order.items), selectinload(Order.customer))
         
         if status_filter:
             query = query.where(Order.status == status_filter)
@@ -193,7 +184,7 @@ class OrderService:
             query = query.where(
                 or_(
                     Order.order_number.ilike(f"%{search}%"),
-                    Order.customer_name.ilike(f"%{search}%"),
+                    Customer.full_name.ilike(f"%{search}%"),
                 )
             )
 

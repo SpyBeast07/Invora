@@ -5,7 +5,6 @@ from fastapi import HTTPException, status
 from typing import List, Tuple, Optional
 
 from app.models.product import Product
-from app.models.inventory import Inventory
 from app.schemas.product import ProductCreate, ProductUpdate
 
 
@@ -25,8 +24,7 @@ class ProductService:
     @classmethod
     async def create(cls, db: AsyncSession, product_in: ProductCreate) -> Product:
         """
-        Create a new product. Automatically initializes the corresponding 
-        inventory record with a stock quantity of 0.
+        Create a new product.
         """
         existing_product = await cls.get_by_sku(db, product_in.sku)
         if existing_product:
@@ -38,16 +36,6 @@ class ProductService:
         db_product = Product(**product_in.model_dump())
         db.add(db_product)
         await db.flush()  # Obtain id
-
-        # Automatically seed corresponding inventory record at 0 quantity
-        db_inventory = Inventory(
-            product_id=db_product.id,
-            quantity=0,
-            location=None,
-            reorder_level=5,
-        )
-        db.add(db_inventory)
-        await db.flush()
 
         return db_product
 

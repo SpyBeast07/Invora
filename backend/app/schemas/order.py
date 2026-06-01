@@ -1,6 +1,9 @@
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr, Field, condecimal
+from decimal import Decimal
+from typing import List, Optional, Annotated
+from pydantic import BaseModel, Field
+
+from app.schemas.customer import CustomerResponse
 
 
 # ------------------------------------------------------------------------------
@@ -19,7 +22,7 @@ class OrderItemCreate(OrderItemBase):
 
 class OrderItemResponse(OrderItemBase):
     id: int
-    unit_price: condecimal(max_digits=10, decimal_places=2) = Field(..., description="Frozen historical unit price")
+    unit_price: Annotated[Decimal, Field(max_digits=10, decimal_places=2, description="Frozen historical unit price")]
     created_at: datetime
     updated_at: datetime
 
@@ -32,8 +35,7 @@ class OrderItemResponse(OrderItemBase):
 # ------------------------------------------------------------------------------
 
 class OrderBase(BaseModel):
-    customer_name: str = Field(..., min_length=1, max_length=255, description="Billing/shipping name")
-    customer_email: Optional[EmailStr] = Field(None, description="Contact email address")
+    customer_id: int = Field(..., description="Foreign key ID of the associated Customer")
 
 
 class OrderCreate(OrderBase):
@@ -48,9 +50,10 @@ class OrderResponse(OrderBase):
     id: int
     order_number: str
     status: str
-    total_amount: condecimal(max_digits=12, decimal_places=2)
+    total_amount: Annotated[Decimal, Field(max_digits=12, decimal_places=2)]
     user_id: Optional[int]
     items: List[OrderItemResponse]
+    customer: Optional[CustomerResponse] = None
     created_at: datetime
     updated_at: datetime
 
